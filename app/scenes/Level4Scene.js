@@ -182,16 +182,16 @@ Using regex, highlight all instances of "Tyran Tyran Tyran" where "Tyran" is rep
         yoyo: true,
       });
 
-      // Optional: If user is clearly going off-track, give subtle warning.
-      // (Doesn't punish; just helps.)
-      if (!this.solution.startsWith(this.outputText.text)) {
-        this.feedbackText.setText("Hmm… that doesn’t look quite right yet.");
-        this.flashOverlay(0xe74c3c);
-        this.cameras.main.shake(110, 0.004);
-        this.lockUI(450);
-      } else {
-        this.feedbackText.setText("");
-      }
+      // // Optional: If user is clearly going off-track, give subtle warning.
+      // // (Doesn't punish; just helps.)
+      // if (!this.solution.startsWith(this.outputText.text)) {
+      //   this.feedbackText.setText("Hmm… that doesn’t look quite right yet.");
+      //   this.flashOverlay(0xe74c3c);
+      //   this.cameras.main.shake(110, 0.004);
+      //   this.lockUI(450);
+      // } else {
+      //   this.feedbackText.setText("");
+      // }
     });
 
     this.optionButtons.push(btn);
@@ -271,9 +271,9 @@ Using regex, highlight all instances of "Tyran Tyran Tyran" where "Tyran" is rep
       });
 
       // Optional: slower auto-advance (comment out if you want manual Continue)
-      this.time.delayedCall(1200, () => {
-        this.scene.start("TitleScene");
-      });
+      // this.time.delayedCall(1200, () => {
+      //   this.scene.start("TitleScene");
+      // });
     });
 
     this.submitBtn = btn;
