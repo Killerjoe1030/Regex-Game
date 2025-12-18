@@ -1,7 +1,8 @@
 export default class FinalLevelScene extends Phaser.Scene {
   constructor() {
     super("FinalLevelScene");
-    this.buttonSize = { x: 50, y: 25 };
+    this.buttonSize = { x: 20, y: 12 };
+
     this.expectedMatches = [
       "Researchers",
       "Denali National Park",
@@ -10,111 +11,145 @@ export default class FinalLevelScene extends Phaser.Scene {
       "2015"
     ];
   }
-  
-  //[A-Z][a-z]+\s[A-Z][a-z]+\s[A-Z][a-z]+|[A-Z][a-z]+|[A-Z][a-z]+\s[A-Z][a-z]+|\d\d\d\d
 
   create() {
-    const width = this.scale.width;
-    const height = this.scale.height;
     this.regexString = "";
-
-    this.add.text(width / 2, height * 0.1, "Final Level - Regex Challenge", {
-      fontSize: `${Math.floor(height * 0.035)}px`,
-      color: "#ffffff",
-      align: "center",
-      wordWrap: { width: width * 0.9 }
-    }).setOrigin(0.5);
 
     this.sourceText =
       `Researchers discovered a rocky outcrop at Denali National Park covered in thousands of dinosaur tracks, which they nicknamed the Coliseum. Paleontologist Dustin Stewart helped document the find during an expedition in the summer of 2015.`;
 
     this.chars = [...this.sourceText];
     this.charObjects = [];
-    this.renderChars(width, height);
 
-    this.outputText = this.add.text(width / 2, height * 0.5, "", {
-      fontSize: `${Math.floor(height * 0.04)}px`,
+    // === UI ELEMENTS ===
+    this.titleText = this.add.text(0, 0, "Final Level - Regex Challenge", {
+      fontSize: "28px",
+      color: "#ffffff"
+    }).setOrigin(0.5);
+
+    this.scoreText = this.add.text(20, 20, "Score: 0", {
+      fontSize: "22px",
+      color: "#ffff00"
+    }).setOrigin(0, 0);
+
+    this.pauseButton = this.add.text(0, 20, "⏸ Pause", {
+      fontSize: "20px",
+      backgroundColor: "#ffffff",
+      color: "#000000",
+      padding: { x: 10, y: 6 }
+    }).setOrigin(1, 0).setInteractive({ useHandCursor: true });
+
+    this.pauseButton.on("pointerdown", () => this.showPauseOverlay());
+
+    this.outputText = this.add.text(0, 0, "", {
+      fontSize: "24px",
       backgroundColor: "#000000",
       color: "#00ff00",
-      padding: { x: 20, y: 10 },
-      align: "center",
-      wordWrap: { width: width * 0.9 }
+      padding: { x: 12, y: 8 },
+      wordWrap: { width: 600 }
     }).setOrigin(0.5);
 
-    this.scoreText = this.add.text(width / 2, height * 0.58, "Score: 0", {
-      fontSize: `${Math.floor(height * 0.03)}px`,
-      color: "#ffff00"
-    }).setOrigin(0.5);
+    // === RENDER TEXT ===
+    this.renderChars();
 
-    const components = [
-      "\\w",
-      "[A-Z]",
-      "[a-z]",
-      "\\d",
-      "+",
-      "\\s",
-      "|",
-      "@",
-      "\\.",
-      "[0-9]",
-      "[^ ]",
-      "(",
-      ")"
+    // === REGEX BUTTONS ===
+    this.components = [
+      "\\w", "[A-Z]", "[a-z]", "\\d", "+", "\\s",
+      "|", "@", "\\.", "[0-9]", "[^ ]", "(", ")"
     ];
 
-    const buttonSpacing = 10;
-    const buttonHeight = 50;
-    const maxRowWidth = width * 0.9;
-    let row = [];
-    let rowWidth = 0;
-    let y = height * 0.65;
+    this.regexButtons = [];
+    this.createRegexButtons();
 
-    components.forEach((value) => {
-      const temp = this.add.text(0, 0, value, {
-        fontSize: "24px",
-        padding: { x: this.buttonSize.x, y: this.buttonSize.y }
-      });
-      const btnWidth = temp.width + buttonSpacing;
-      temp.destroy();
+    // === CONTROL BUTTONS ===
+    this.resetButton = this.createActionButton("Reset", () => this.resetRegex());
+    this.solveButton = this.createActionButton("Solve", () => this.solveRegex());
 
-      if (rowWidth + btnWidth > maxRowWidth) {
-        let startX = (width - rowWidth + buttonSpacing) / 2;
-        row.forEach(b => this.createOptionButton(startX + b.offset, y, b.value));
-        row = [];
-        rowWidth = 0;
-        y += buttonHeight;
-      }
+    // === PAUSE OVERLAY ===
+    this.createPauseOverlay();
 
-      row.push({ value, offset: rowWidth });
-      rowWidth += btnWidth;
-    });
-
-    if (row.length > 0) {
-      let startX = (width - rowWidth + buttonSpacing) / 2;
-      row.forEach(b => this.createOptionButton(startX + b.offset, y, b.value));
-    }
-
-    this.createResetButton(width * 0.35, height * 0.85, "Reset");
-    this.createSolveButton(width * 0.65, height * 0.85, "Solve");
+    // === RESPONSIVE LAYOUT ===
+    this.scale.on("resize", () => this.layoutUI());
+    this.layoutUI();
   }
 
-  renderChars(width, height) {
+  // ================= LAYOUT =================
+
+  layoutUI() {
+    const { width, height } = this.scale;
+
+    this.titleText.setPosition(width / 2, 20);
+    this.scoreText.setPosition(20, 20);
+    this.pauseButton.setPosition(width - 20, 20);
+
+    this.outputText.setPosition(width / 2, height * 0.52);
+    this.outputText.setWordWrapWidth(width * 0.85);
+
+    this.layoutRegexButtons();
+
+    this.resetButton.setPosition(width * 0.35, height - 40);
+    this.solveButton.setPosition(width * 0.65, height - 40);
+
+    this.layoutPauseOverlay();
+  }
+
+  // ================= REGEX BUTTON GRID =================
+
+  createRegexButtons() {
+    this.components.forEach(value => {
+      const btn = this.add.text(0, 0, value, {
+        fontSize: "20px",
+        backgroundColor: "#ffffff",
+        color: "#000000",
+        padding: this.buttonSize
+      }).setOrigin(0.5).setInteractive({ useHandCursor: true });
+
+      btn.on("pointerover", () => btn.setStyle({ backgroundColor: "#dddddd" }));
+      btn.on("pointerout", () => btn.setStyle({ backgroundColor: "#ffffff" }));
+      btn.on("pointerdown", () => {
+        this.regexString += value;
+        this.outputText.setText(this.regexString);
+        this.updateHighlights();
+      });
+
+      this.regexButtons.push(btn);
+    });
+  }
+
+  layoutRegexButtons() {
+    const { width, height } = this.scale;
+
+    const cols = Math.floor(width / 120);
+    const startY = height * 0.65;
+    const spacingX = 110;
+    const spacingY = 50;
+
+    this.regexButtons.forEach((btn, i) => {
+      const col = i % cols;
+      const row = Math.floor(i / cols);
+
+      btn.setPosition(
+        width / 2 - ((cols - 1) * spacingX) / 2 + col * spacingX,
+        startY + row * spacingY
+      );
+    });
+  }
+
+  // ================= TEXT RENDER =================
+
+  renderChars() {
+    const { width, height } = this.scale;
+
     let x = width * 0.05;
-    let y = height * 0.2;
-    const fontSize = Math.floor(height * 0.03);
-    const lineHeight = fontSize * 1.5;
+    let y = height * 0.15;
+    const fontSize = 20;
+    const lineHeight = 30;
     const maxWidth = width * 0.9;
 
     this.charObjects.forEach(c => c.destroy());
     this.charObjects = [];
 
     this.chars.forEach(char => {
-      if (char === "\n") {
-        x = width * 0.05;
-        y += lineHeight;
-        return;
-      }
-
       const txt = this.add.text(x, y, char, {
         fontFamily: "monospace",
         fontSize,
@@ -130,174 +165,113 @@ export default class FinalLevelScene extends Phaser.Scene {
       x += txt.width;
       this.charObjects.push(txt);
     });
-
-    const totalWidth =
-      this.charObjects.reduce((acc, c) => Math.max(acc, c.x + c.width), 0)
-      - width * 0.05;
-
-    const offsetX = (width - totalWidth) / 2 - width * 0.05;
-    this.charObjects.forEach(c => c.x += offsetX);
   }
 
+  // ================= HIGHLIGHT LOGIC =================
+
   updateHighlights() {
-    // 1. Reset all
     this.charObjects.forEach(c => c.setColor("#ffffff"));
     if (!this.regexString) return;
 
     let regex;
-    try {
-      regex = new RegExp(this.regexString, "g");
-    } catch {
-      return;
-    }
+    try { regex = new RegExp(this.regexString, "g"); }
+    catch { return; }
 
-    const expectedSet = new Set(this.expectedMatches);
-
-    // 2. Collect matches
+    const expected = new Set(this.expectedMatches);
     const matches = [];
-    let match;
-    while ((match = regex.exec(this.sourceText)) !== null) {
-      if (match[0].length === 0) {
-        regex.lastIndex++;
-        continue;
-      }
-      matches.push({
-        start: match.index,
-        end: match.index + match[0].length,
-        text: match[0]
-      });
+
+    let m;
+    while ((m = regex.exec(this.sourceText)) !== null) {
+      if (!m[0]) { regex.lastIndex++; continue; }
+      matches.push({ start: m.index, end: m.index + m[0].length, text: m[0] });
     }
 
-    // 3. Paint GREEN first (highest priority)
-    matches
-      .filter(m => expectedSet.has(m.text))
-      .forEach(m => {
-        for (let i = m.start; i < m.end; i++) {
-          this.charObjects[i]?.setColor("#00ff00");
+    matches.filter(m => expected.has(m.text)).forEach(m => {
+      for (let i = m.start; i < m.end; i++) {
+        this.charObjects[i]?.setColor("#00ff00");
+      }
+    });
+
+    matches.filter(m => !expected.has(m.text)).forEach(m => {
+      for (let i = m.start; i < m.end; i++) {
+        if (this.charObjects[i]?.style.color === "#ffffff") {
+          this.charObjects[i]?.setColor("#ff5555");
         }
-      });
-
-    // 4. Paint RED only if still white
-    matches
-      .filter(m => !expectedSet.has(m.text))
-      .forEach(m => {
-        for (let i = m.start; i < m.end; i++) {
-          if (this.charObjects[i]?.style.color === "#ffffff") {
-            this.charObjects[i]?.setColor("#ff5555");
-          }
-        }
-      });
-  }
-
-  getMatchRanges(regex, text) {
-    const ranges = [];
-    let match;
-
-    while ((match = regex.exec(text)) !== null) {
-      if (match[0].length === 0) {
-        regex.lastIndex++;
-        continue;
-      }
-
-      ranges.push({
-        start: match.index,
-        end: Math.min(match.index + match[0].length, this.charObjects.length)
-      });
-    }
-
-    return ranges;
-  }
-
-  evaluateRegex(regexString) {
-    let regex;
-    try {
-      regex = new RegExp(regexString, "g");
-    } catch {
-      return { score: 0, reason: "Invalid regex" };
-    }
-
-    const ranges = this.getMatchRanges(regex, this.sourceText);
-    const matches = ranges.map(r =>
-      this.sourceText.slice(r.start, r.end)
-    );
-
-    const uniqueMatches = [...new Set(matches)];
-    const expectedHits = this.expectedMatches.filter(e =>
-      uniqueMatches.includes(e)
-    );
-
-    const falsePositives = uniqueMatches.filter(m =>
-      !this.expectedMatches.includes(m)
-    );
-
-    const accuracy = expectedHits.length / this.expectedMatches.length;
-    const precision =
-      uniqueMatches.length === 0
-        ? 0
-        : expectedHits.length / uniqueMatches.length;
-
-    const score = Math.round(accuracy * precision * 100);
-
-    let reason = `Accuracy: ${expectedHits.length}/${this.expectedMatches.length}`;
-    if (falsePositives.length) {
-      reason += ` | False positives: ${falsePositives.length}`;
-    }
-
-    return { score, reason };
-  }
-
-  createOptionButton(x, y, value) {
-    const btn = this.add.text(x, y, value, {
-      fontSize: "24px",
-      backgroundColor: "#ffffff",
-      color: "#000000",
-      padding: { x: this.buttonSize.x, y: this.buttonSize.y }
-    }).setOrigin(0.5).setInteractive({ useHandCursor: true });
-
-    btn.on("pointerover", () => btn.setStyle({ backgroundColor: "#dddddd" }));
-    btn.on("pointerout", () => btn.setStyle({ backgroundColor: "#ffffff" }));
-    btn.on("pointerdown", () => {
-      this.regexString += value;
-      this.outputText.setText(this.regexString);
-      this.updateHighlights();
-    });
-  }
-
-  createResetButton(x, y, label) {
-    const btn = this.add.text(x, y, label, {
-      fontSize: "24px",
-      backgroundColor: "#ffffff",
-      color: "#000000",
-      padding: { x: this.buttonSize.x, y: this.buttonSize.y }
-    }).setOrigin(0.5).setInteractive({ useHandCursor: true });
-
-    btn.on("pointerdown", () => {
-      this.regexString = "";
-      this.outputText.setText("");
-      this.outputText.setColor("#00ff00");
-      this.updateHighlights();
-      this.scoreText.setText("Score: 0");
-    });
-  }
-
-  createSolveButton(x, y, label) {
-    const btn = this.add.text(x, y, label, {
-      fontSize: "24px",
-      backgroundColor: "#ffffff",
-      color: "#000000",
-      padding: { x: this.buttonSize.x, y: this.buttonSize.y }
-    }).setOrigin(0.5).setInteractive({ useHandCursor: true });
-
-    btn.on("pointerdown", () => {
-      const evaluation = this.evaluateRegex(this.regexString);
-      this.scoreText.setText(
-        `Score: ${evaluation.score}\n${evaluation.reason}`
-      );
-
-      if (evaluation.score === 100) {
-        window.GameState.score += 1;
-        this.time.delayedCall(500, () => this.scene.start("TitleScene"));
       }
     });
+  }
+
+  // ================= ACTION BUTTONS =================
+
+  createActionButton(label, onClick) {
+    const btn = this.add.text(0, 0, label, {
+      fontSize: "22px",
+      backgroundColor: "#ffffff",
+      color: "#000000",
+      padding: { x: 20, y: 10 }
+    }).setOrigin(0.5).setInteractive({ useHandCursor: true });
+
+    btn.on("pointerdown", onClick);
+    return btn;
+  }
+
+  resetRegex() {
+    this.regexString = "";
+    this.outputText.setText("");
+    this.updateHighlights();
+    this.scoreText.setText("Score: 0");
+  }
+
+  solveRegex() {
+    const score = this.evaluateRegex(this.regexString);
+    this.scoreText.setText(`Score: ${score.score}`);
+  }
+
+  // ================= PAUSE OVERLAY =================
+
+  createPauseOverlay() {
+    this.pauseOverlay = this.add.container(0, 0).setVisible(false);
+
+    const bg = this.add.rectangle(0, 0, 100, 100, 0x000000, 0.7).setOrigin(0);
+    const text = this.add.text(0, 0, "Game Paused", {
+      fontSize: "32px",
+      color: "#ffffff"
+    }).setOrigin(0.5);
+
+    // Resume button
+    const resume = this.createActionButton("Resume", () => this.hidePauseOverlay());
+
+    // Quit button
+    const quit = this.createActionButton("Quit", () => this.scene.start("TitleScene"));
+
+    this.pauseOverlay.add([bg, text, resume, quit]);
+    this.pauseElements = { bg, text, resume, quit };
+  }
+
+  layoutPauseOverlay() {
+    const { width, height } = this.scale;
+
+    this.pauseElements.bg.setSize(width, height);
+    this.pauseElements.text.setPosition(width / 2, height / 2 - 40);
+    this.pauseElements.resume.setPosition(width / 2, height / 2 + 20);
+    this.pauseElements.quit.setPosition(width / 2, height / 2 + 70);
+  }
+
+  showPauseOverlay() {
+    this.pauseOverlay.setVisible(true);
+
+    // Disable game buttons
+    this.regexButtons.forEach(b => b.disableInteractive());
+    this.resetButton.disableInteractive();
+    this.solveButton.disableInteractive();
+  }
+
+  hidePauseOverlay() {
+    this.pauseOverlay.setVisible(false);
+
+    // Re-enable game buttons
+    this.regexButtons.forEach(b => b.setInteractive({ useHandCursor: true }));
+    this.resetButton.setInteractive({ useHandCursor: true });
+    this.solveButton.setInteractive({ useHandCursor: true });
   }
 }
