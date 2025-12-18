@@ -2,7 +2,7 @@ export default class Level1Scene extends Phaser.Scene {
   constructor() {
     super("Level1Scene");
     this.buttonSize = { x: 40, y: 20 };
-    this.solution = "ABCD"; //Solution for Level 1
+    this.solution = "\bHerbivorous\b"; //Solution for Level 1
   }
 
   create() {
@@ -13,7 +13,7 @@ export default class Level1Scene extends Phaser.Scene {
     this.add.text(
       centerX,
       centerY - 500,
-      "Level 1 - Dinosaur Name",
+      "Level 1",
       {
         fontSize: "24px",
         color: "#ffffff",
@@ -27,12 +27,15 @@ export default class Level1Scene extends Phaser.Scene {
       centerX,
       centerY - 300,
       `
-      Level 1 Problem SetLorem ipsum dolor sit amet, 
-      consectetur adipiscing elit, sed do eiusmod tempor 
-      incididunt ut labore et dolore magna aliqua. 
-      Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. 
-      Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. 
-      Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.
+       The Stegosaurus is a genus of herbivorous four-legged armored dinosaurs from
+       the Late Jurassic period, characterized by the distinctive kite-shaped upright plates
+       along their backs and spikes on their tails. Herbivorous, large, and heavily built with 
+       rounded backs, short fore limbs, long hind limbs, and tails held high in the air. Due to
+       their distinctive combination of broad, upright plates and tail tipped with spikes, Stegosaurus
+       is one of the most recognizable kinds of dinosaurs. The function of this array of plates and spikes
+       has been the subject of much speculation among scientists. Today, it is generally agreed their 
+       spiked tails were most likely used as defense against predators, while their plates may have been 
+       used primarily for display, and secondarily for thermoregulatory functions.
       `,
       {
         fontSize: "24px",
@@ -54,7 +57,7 @@ export default class Level1Scene extends Phaser.Scene {
 
     //Buttons for all regex components
     //Option buttons for each regex component -- don't forget to change method name and createOptionButton method
-    const options = ["A", "B", "C", "D"]; //Change options based on unlocked regex components
+    const options = ["herbivorous", "/b", "\b", "[A-Z]", "Herbivorous"]; //Change options based on unlocked regex components
     const totalSpan = 400; // Total width for all buttons
     const spacing = options.length > 1 ? totalSpan / (options.length - 1) : 0;
     options.forEach((value, index) => {
