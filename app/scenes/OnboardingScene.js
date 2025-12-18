@@ -2,7 +2,7 @@
   constructor() {
     super("OnboardingScene");
     this.buttonSize = { x: 40, y: 20 };
-    this.solution = "ABCD"; //Solution for Level 1
+    this.solution = "Dinosaurs"; //Solution for Level 1
   }
 
   create() {
@@ -27,7 +27,9 @@
       centerX,
       centerY - 300,
       `
-      Onboarding Text Block Here
+      Dinosaurs are a diverse group of reptiles that roamed the Earth over a hundred 
+      million years ago. They first appeared during the triassic period. They are characterized 
+      by an upright stance from a hole in their hip socket, allowing legs to be directly under the body.
       `,
       {
         fontSize: "24px",
